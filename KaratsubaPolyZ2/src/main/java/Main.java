@@ -36,23 +36,54 @@ public class Main {
     /**
      * Подается на вход многочлены P и Q в виде массива его коэффициентов (1, x, x^2, ..., x^n)
      * и так далее, коэффициенты либо 0, либо 1
-     * rP, lP - указатели на левый и правый конец множителя P
-     * rQ, lQ - указатели на левый и правый конец множителя Q**/
-    public static int[] karatsubaZ2Init(int []P, int []Q, int n, int lP, int rP, int lQ, int rQ) {
+     * pow = 2^m <= n
+     * Note: Вместо использования базы вида if (n == 1) c[0] = a[0] * b[0], имеет смысл, начиная с какого-то размера задачи,
+     * использовать более эффективное наивное умножение за квадрат.**/
+    public static int[] karatsubaZ2Init(int []P, int []Q, int n, int pow) {
         //n = 2^k
         //P = P0 + x^(2^k)P1, Q = Q0 + x^(2^k)Q1
-        if(n == 0) {
-            return new int[] {P[rP] * Q[rQ]};
+        if(pow == 1) {                                                       //Произведение линейных сомножителей
+            return new int[] {P[0] * Q[0], P[0]*Q[1] + P[1]*Q[0], P[1]*Q[1]};
         }
-        int[] sP = new int[P.length];
-        for(int i = 0; i < P.length; i++) {
-
+        int k = n / 2;
+        int[] sP = new int[k + k % 2];                                      //P0 + P1
+        int[] sQ = new int[k + k % 2];                                      //Q0 + Q1
+        for(int i = 0; i < k + k % 2; i++) {
+            if (k + i + k % 2 >) {
+                sP[i] = P[i] % 2;
+                sQ[i] = Q[i] % 2;
+            }
+            else {
+                sP[i] = (P[i] + P[k + i]) % 2;
+                sQ[i] = (Q[i] + Q[k + i]) % 2;
+            }
         }
-        int[] P0Q0 = karatsubaZ2Init(P, Q, n / 2, 0, rP / 2, 0, rQ / 2);
-        int[] P1Q1 = karatsubaZ2Init(P, Q, n / 2, rP / 2 +  1, rP, rQ / 2 + 1, rQ);
-        //int[] Last = karatsubaZ2Init(, n / 2, 0, );
-
-        return null;
+        int[] sPQ = karatsubaZ2Init(sP, sQ, n / 2, pow - 1);      //(P0 + P1)*(Q0 + Q1)
+        for(int i = 0; i < k; i++) {
+            sP[i] = P[i];
+            sQ[i] = Q[i];
+        }
+        int[] PQ = karatsubaZ2Init(sP, sQ, n / 2, pow - 1);       //P0 * Q0
+        for(int i = 0; i < k; i++) {
+            sP[i] = P[i + k];
+            sQ[i] = Q[i + k];
+        }
+        int[] PQ1 = karatsubaZ2Init(sP, sQ, n / 2, pow - 1);       //P1 * Q1
+        for(int i = 0; i < k; i++) {
+            sPQ[i] = (sPQ[i] - PQ[i] - PQ1[i]) % 2;                         //(P0 + P1)*(Q0 + Q1) - P0Q0 - P1Q1
+        }
+        int[] res = new int[2 * n];                                         //fill result
+        if (pow >= 0) System.arraycopy(PQ, 0, res, 0, pow);
+        for(int i = pow; i < 2 * pow - 1; i++) {
+            res[i] = PQ[i] + sPQ[i - pow];
+        }
+        if(2 * pow - 1 < n) {
+            res[2 * pow - 1] = sPQ[2 * pow - 1];
+            for(int i = 2 * pow; i < 2 * pow + n + 1; i++) {
+                res[i] = PQ1[i - 2 * pow] + sPQ[i - 2 * pow];
+            }
+        }
+        return res;
     }
 
     /**Бинарное возведение в степень 2**/
@@ -74,15 +105,15 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         int[] P = onStart(scanner);
         int[] Q = onStart(scanner);
-        int pSize = P.length, n = (int) Math.floor(Math.log(pSize) / Math.log(2));
+        int pSize = P.length, k = (int) Math.floor(Math.log(pSize) / Math.log(2));
         if(pSize != Q.length) {
             System.out.println("Mismatch in size");
             System.exit(-1);
         }
-        int k  = binPower(n);
-        int[] res = karatsubaZ2Init(P, Q, n, 0, k - 1, 0, k - 1);
+        int[] res = karatsubaZ2Init(P, Q, pSize - 1, binPower(k));
         for (int re : res) {
-            System.out.println(re);
+            System.out.print(re + " ");
         }
+        System.out.println();
     }
 }
