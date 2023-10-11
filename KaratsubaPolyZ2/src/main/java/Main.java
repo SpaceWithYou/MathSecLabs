@@ -1,7 +1,9 @@
+import java.util.Random;
 import java.util.Scanner;
 
-/*Алгоритм Карацубы умножения многочленов над Z_2*/
+/**Алгоритм Карацубы умножения многочленов над Z_2**/
 public class Main {
+    private static final int time = 1000000;
     /**Проверяет корректность ввода**/
     private static boolean check(int [] P) {
         if(P.length == 0) {
@@ -36,105 +38,52 @@ public class Main {
     /**
      * Подается на вход многочлены P и Q в виде массива его коэффициентов (1, x, x^2, ..., x^n)
      * и так далее, коэффициенты либо 0, либо 1
-     * pow = 2^m <= n
      * Note: Вместо использования базы вида if (n == 1) c[0] = a[0] * b[0], имеет смысл, начиная с какого-то размера задачи,
-     * использовать более эффективное наивное умножение за квадрат.**/
-    public static int[] karatsubaZ2Init(int []P, int []Q, int n, int pow) {
-        //n = 2^t
-        //P = P0 + x^(2^t)P1, Q = Q0 + x^(2^t)Q1
-//        if(pow == 1) {                                                       //Произведение линейных сомножителей
-//            return new int[] {P[0] * Q[0], P[0]*Q[1] + P[1]*Q[0], P[1]*Q[1]};
-//        }
-//        int k = n / 2;
-//        int m = pow / 2;
-//        int s = m + 1;
-//        int[] sP = new int[s];                                            //P0 + P1
-//        int[] sQ = new int[s];                                            //Q0 + Q1
-//        for(int i = 0; i <= m; i++) {
-//            if (i >= k) {
-//                sP[i] = P[i];
-//                sQ[i] = Q[i];
-//            }
-//            else {
-//                sP[i] = (P[i] + P[i + s]) % 2;
-//                sQ[i] = (Q[i] + Q[i + s]) % 2;
-//            }
-//        }
-//        int[] sPQ = karatsubaZ2Init(sP, sQ, n / 2, pow - 1);       //(P0 + P1)*(Q0 + Q1)
-//        for(int i = 0; i <= m; i++) {
-//            sP[i] = P[i];
-//            sQ[i] = Q[i];
-//        }
-//        int[] PQ = karatsubaZ2Init(sP, sQ, n / 2, pow - 1);        //P0 * Q0
-//        for(int i = 0; i <= m; i++) {
-//            if (i >= k) {
-//                sP[i] = P[i];
-//                sQ[i] = Q[i];
-//            }
-//            else {
-//                sP[i] = P[i + s];
-//                sQ[i] = Q[i + s];
-//            }
-//        }
-//        int[] PQ1 = karatsubaZ2Init(sP, sQ, n / 2, pow - 1);        //P1 * Q1
-//        for(int i = 0; i <= m; i++) {
-//            sPQ[i] = (sPQ[i] - PQ[i] - PQ1[i]) % 2;                         //(P0 + P1)*(Q0 + Q1) - P0Q0 - P1Q1
-//            if(sPQ[i] < 0) sPQ[i] += 2;
-//        }
-//        //int[] res = new int[2 * n + 1];                                     //fill result
-//        int[] res = new int[3 * pow - 1];                                     //fill result
-//        System.arraycopy(PQ, 0, res, 0, m + 1);
-//        res[m + 1] = (PQ[m + 1] + sPQ[0]) % 2;
-//        for(int i = m + 2; i < 2 * m + 2; i++) {
-//            res[i] = sPQ[i - m - 1];
-//        }
-//        res[2 * m + 2] = (res[2 * m + 2] + PQ1[0]) % 2;
-//        for(int i = 2 * m + 3; i <= 3 * pow - 2; i++) {
-//            res[i] = PQ1[i - 2 * m - 3];
-//        }
-//        return res;
-        if(n == 1) {
-            return new int[] {P[0]*Q[0], P[0]*Q[1] + P[1]*Q[0], P[1]*Q[1]};
+     * использовать более эффективное наивное умножение за квадрат.
+     * Note: Степень многочлена - степень двойки**/
+    private static int[] karatsubaZ2Init(int []P, int []Q, int n) {
+        if(n == 1) return new int[] {P[0] * Q[0], 0};
+        int k = n / 2;
+        int[] sP = new int[k];
+        int[] sQ = new int[k];
+        for(int i = 0; i < k; i++) {
+            sP[i] = (P[i] + P[i + k]) % 2;
+            sQ[i] = (Q[i] + Q[i + k]) % 2;
         }
-        int []sP = new int[pow];
-        int []sQ = new int[pow];
-        for(int i = 0; i < pow; i ++) {
-            if(i + pow  <= n - pow) {
-                sP[i] = (P[i] + P[i + pow + 1]) % 2;
-                sQ[i] = (Q[i] + Q[i + pow + 1]) % 2;
-            }
-            else {
-                sP[i] = P[i];
-                sQ[i] = Q[i];
-            }
-        }
-        int[] sPQ = karatsubaZ2Init(sP, sQ, n - 1, pow / 2);    //(P0 + P1)(Q0 +Q1) "pow" elements
-        for(int i = 0; i < pow; i++) {
+        int[] sPQ = karatsubaZ2Init(sP, sQ, k);                     //(P0 + P1)(Q0 + Q1)
+        for(int i = 0; i < k; i++) {
             sP[i] = P[i];
             sQ[i] = Q[i];
         }
-        int[] PQ = karatsubaZ2Init(sP, sQ, n - 1, pow / 2);      //P0Q0 "pow" elements
-        for(int i = 0; i < pow; i++) {
-            if(i + pow - 1 < n - pow) {
-                sP[i] = P[i + pow];
-                sQ[i] = Q[i + pow];
-            }
-            else {
-                sP[i] = 0;
-                sQ[i] = 0;
-            }
+        int[] PQ0 = karatsubaZ2Init(sP, sQ, k);                     //P0Q0
+        for(int i = 0; i < k; i++) {
+            sP[i] = P[i + k];
+            sQ[i] = Q[i + k];
         }
-        int[] PQ1 = karatsubaZ2Init(sP, sQ, n - 1, pow / 2);     //P1Q1 "pow" elements
-        for(int i = 0; i < pow; i++) {                                   //(P0 + P1)(Q0 +Q1) - P0Q0 - P1Q1
-            sPQ[i] = (sPQ[i] - PQ[i] - PQ1[i]) % 2;
+        int[] PQ1 = karatsubaZ2Init(sP, sQ, k);                    //P1Q1
+        int[] res = new int[2 * n];
+        for(int i = 0; i < n; i++) {
+            sPQ[i] = (sPQ[i] - PQ1[i] - PQ0[i]) % 2;
             if(sPQ[i] < 0) sPQ[i] += 2;
         }
-        int[] res = new int[3 * pow - 2];
-        System.arraycopy(PQ, 0, res, 0, pow - 1);
-        res[pow - 1] = (PQ[pow - 1] + sPQ[0]) % 2;
-        System.arraycopy(sPQ, 1, res, 1 + pow - 1, pow - 1);
-        res[2 * pow - 2] = (res[2 * pow - 2] + PQ[0]) % 2;
-        System.arraycopy(PQ1, 1, res, 1 + 2 * pow - 2, pow - 1);
+        //fill res
+        System.arraycopy(PQ0, 0, res, 0, n - 1);
+        for(int i = k; i < n + k; i++) {
+            res[i] = (res[i] + sPQ[i - k]) % 2;
+        }
+        for(int i = n; i < n + n; i++) {
+            res[i] = (res[i] + PQ1[i - n]) % 2;
+        }
+        return  res;
+    }
+
+    private static int[] multiZ2(int []P, int []Q, int n) {
+        int []res = new int[2 * n];
+        for(int i = 0; i < n; i++) {
+            for(int j = 0; j < n; j++) {
+                res[i + j] = (P[i] * Q[j] + res[i + j]) % 2;
+            }
+        }
         return res;
     }
 
@@ -152,24 +101,64 @@ public class Main {
         return res;
     }
 
+    /**Возращает рандомный многочлен над Z2 степени n - 1**/
+    private static int[] getPoly(int n, long seed) {
+        Random rand = new Random(seed);
+        int []res = new int[n];
+        for(int i = 0; i < n; i++) {
+            res[i] = rand.nextInt() % 2;
+            if(res[i] < 0) res[i] += 2;
+        }
+        return res;
+    }
+
+    private static void tests() {
+        int []tP, tQ, res;
+        int []testValues = new int[] {binPower(3), binPower(5), binPower(10), binPower(15), binPower(20)};
+        long startTime, endTime;
+        long seed1 = 111111111, seed2 = 101010101;
+        for(int volume : testValues) {
+            System.out.println("Running volume = " + volume);
+            tP = getPoly(volume, seed1);
+            tQ = getPoly(volume, seed2);
+            startTime = System.nanoTime();
+            res = karatsubaZ2Init(tP, tQ, volume);
+            endTime = System.nanoTime();
+            System.out.println("Karatsuba time in ms " + (double)((endTime - startTime) / time));
+            startTime = System.nanoTime();
+            res = multiZ2(tP, tQ, volume);
+            endTime = System.nanoTime();
+            System.out.println("Native time in ms " +  (double)((endTime - startTime) / time));
+            System.out.println();
+        }
+    }
+
     public static void main(String[] args) {
-//        System.out.println("Количество коэффициентов должно совпадать, заполните нулями, если количество коэффициентов не совпадает");
+//        System.out.println("Количество коэффициентов должно совпадать и равняться степени 2, заполните нулями, если количество коэффициентов не совпадает");
 //        Scanner scanner = new Scanner(System.in);
 //        int[] P = onStart(scanner);
 //        int[] Q = onStart(scanner);
 //        int pSize = P.length, k = (int) Math.floor(Math.log(pSize) / Math.log(2));
-//        if(pSize != Q.length) {
+//        if(pSize != Q.length || binPower(k) != pSize) {
 //            System.out.println("Mismatch in size");
 //            System.exit(-1);
 //        }
-        //
-        int[] P = new int[]{0, 0, 0, 0, 1};
-        int[] Q = new int[]{0, 0, 1, 0, 0};
-        int pSize = P.length, k = (int) Math.floor(Math.log(pSize) / Math.log(2));
-        int[] res = karatsubaZ2Init(P, Q, pSize - 1, binPower(k));
-        for (int re : res) {
-            System.out.print(re + " ");
-        }
-        System.out.println();
+//        long startTime = System.nanoTime();
+//        int[] res = karatsubaZ2Init(P, Q, pSize);
+//        long endTime = System.nanoTime();
+//        for (int re : res) {
+//            System.out.print(re + " ");
+//        }
+//        System.out.println();
+//        System.out.println("Karatsuba time in nano seconds " + (endTime - startTime));
+//        startTime = System.nanoTime();
+//        res = multiZ2(P, Q, pSize);
+//        endTime = System.nanoTime();
+//        for (int re : res) {
+//            System.out.print(re + " ");
+//        }
+//        System.out.println();
+//        System.out.println("Native time in nano seconds " + (endTime - startTime));
+//            tests();
     }
 }
