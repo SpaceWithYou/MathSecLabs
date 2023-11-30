@@ -6,9 +6,16 @@ public class FourRussiansAlgorithm {
     /**Пара BitSet для двух ключей <br>
      * Поскольку BitSet, которые мы храним имеет размер K, то хеш
      * будем считать как хеш конкатенации BitSet**/
-    private class BitSetPair {
+    private static class BitSetPair {
         private BitSet key1;
         private BitSet key2;
+
+        private BitSetPair() {}
+
+        private BitSetPair(BitSet key1, BitSet key2) {
+            this.key1 = key1;
+            this.key2 = key2;
+        }
 
         public BitSet getKey1() {
             return key1;
@@ -16,6 +23,14 @@ public class FourRussiansAlgorithm {
 
         public BitSet getKey2() {
             return key2;
+        }
+
+        public void setKey1(BitSet key1) {
+            this.key1 = key1;
+        }
+
+        public void setKey2(BitSet key2) {
+            this.key2 = key2;
         }
 
         @Override
@@ -26,12 +41,17 @@ public class FourRussiansAlgorithm {
 
         @Override
         public int hashCode() {
-            int hash1 = this.key1.hashCode();
-            int hash2 = this.key2.hashCode();
+            BitSet set = (BitSet) this.key1.clone();
+            for(int i = 0; i < this.key2.length(); i++) {
+                if(this.key2.get(i)) {
+                    set.set(i + this.key1.length());
+                }
+            }
+            return set.hashCode();
         }
     }
 
-    private static Map<BitSet[], Integer> scalarMap = new HashMap<>(); // bitset x bitset to {0, 1}
+    private static Map<BitSetPair, Integer> scalarMap = new HashMap<>(); // bitset x bitset to {0, 1}
     private static final int k = 10;
 
     private static long binPow (int a, int n) {
@@ -46,7 +66,7 @@ public class FourRussiansAlgorithm {
         return res;
     }
     /**Prints n x m Array**/
-    private static void PrintArray(BitSet[] Arr, int n, int m) {
+    private static void printArray(BitSet[] Arr, int n, int m) {
         for(int i = 0; i < n; i++) {
             for(int j = 0; j < m; j++) {
                 if(Arr[i].get(j)) {
@@ -75,26 +95,22 @@ public class FourRussiansAlgorithm {
     private static void calculateScalarMap() {
         BitSet set1 = new BitSet(k), set2 = new BitSet(k);
         long pow = binPow(2, k);
-        BitSet[] set;
+        BitSetPair pair;
         int scalar;
         for(long i = 0; i < pow; i++) {
             set1 = BitSet.valueOf(new long[] {i});
             for(long j = 0; j < i; j++) {
-                set = new BitSet[2];
+                pair = new BitSetPair();
                 set2 = BitSet.valueOf(new long[] {j});
-                set[0] = set1;
-                set[1] = set2;
+                pair.setKey1(set1);
+                pair.setKey2(set2);
                 scalar = scalarMult(set1, set2);
-                scalarMap.put(set, scalar);
-                set = new BitSet[2];
-                set[1] = set1;
-                set[0] = set2;
-                scalarMap.put(set, scalar);
+                scalarMap.put(pair, scalar);
+                pair = new BitSetPair(set2, set1);
+                scalarMap.put(pair, scalar);
             }
-            set = new BitSet[2];
-            set[0] = set1;
-            set[1] = set1;
-            scalarMap.put(set, scalarMult(set1, set1));
+            pair = new BitSetPair(set1, set1);
+            scalarMap.put(pair, scalarMult(set1, set1));
         }
     }
     /**Array of bitset <br>
@@ -104,17 +120,20 @@ public class FourRussiansAlgorithm {
      * B - t x l
      * @return C - n x l**/
     private static BitSet[] AlgoMult(BitSet[] A, BitSet[] B, int n, int t, int l) {
-        BitSet setA = new BitSet(t);
-        BitSet setB = new BitSet(t);
+        BitSet setA = new BitSet(k);
+        BitSet setB = new BitSet(k);
         BitSet[] C = new BitSet[n];              //Bitsets are row's of C
         BitSet temp = new BitSet(t);
+        BitSetPair pair = new BitSetPair();
         for(int i = 0; i < n; i++) {
             for(int j = 0; j < t / k; j += k) {
                 for(int m = 0; m < l; m++) {
                     setA = A[i].get(j, j + k - 1);
                     for(int s = 0; s < t / k; s += k) {
                         setB = B[m].get(s, s + k - 1);
-                        if(scalarMap.get(new BitSet[] {setA, setB}) == 1) {
+                        pair.setKey1(setA);
+                        pair.setKey2(setB);
+                        if(scalarMap.get(pair) == 1) {
                             temp.set(m);
                         }
                     }
@@ -148,33 +167,21 @@ public class FourRussiansAlgorithm {
         return C;
     }
 
-    private static BitSet[] parseData(int n) {
-        ArrayList<BitSet> list = new ArrayList<>();
-        try(BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-            int t;
-            String temp;
-            for(int i = 0; i < n; i++) {
-                temp = reader.readLine();
-                String[] strings = temp.split(" ");
-                BitSet set = new BitSet(n);
-                for (int j = 0; i < strings.length; i++) {
-                    t = Integer.getInteger(strings[j]);
-                    if(t != 0 && t != 1) {
-                        System.out.println("Error");
-                        System.exit(-1);
-                    } else {
-                        if(t == 1) {
-                            set.set(i);
-                        }
-                    }
+    /**Generates random n x n array**/
+    private static BitSet[] randomArray(int n) {
+        BitSet res[] = new BitSet[n];
+        BitSet temp = new BitSet(n);
+        Random random = new Random();
+        for(int i = 0; i < n; i++) {
+            for(int j = 0; j < n; j++) {
+                if(random.nextInt() % 2 == 0) {
+                    temp.set(j);
                 }
-                list.add(set);
-                set.clear();
             }
-        } catch (Exception e) {
-            throw new RuntimeException();
+            res[i] = (BitSet) temp.clone();
+            temp.clear();
         }
-        return list.toArray(new BitSet[n]);
+        return res;
     }
 
     /**Добавляет в матрицу 0, чтобы t | n = m**/
@@ -198,25 +205,31 @@ public class FourRussiansAlgorithm {
         return res;
     }
 
+    private static void runTest() {
+        calculateScalarMap();
+        int arr[] = new int[] {3, 4, 6, 8, 10, 12, 14, 16, 18, 20}; //n
+        int size, newSize;
+        for(int i = 0; i < arr.length; i++) {
+            size = (int)binPow(2, arr[i]);
+            BitSet[] A = fillMatrix(randomArray(size), size, size);
+            BitSet[] B = fillMatrix(randomArray(size), size, size);
+            newSize = A.length;
+            long start = System.currentTimeMillis();
+            Mult(A, B, newSize, newSize, newSize);
+            long end = System.currentTimeMillis();
+            System.out.println("Обычное умножение " + "(" + size + ") время " + (end - start));
+            start = System.currentTimeMillis();
+            AlgoMult(A, B, newSize, newSize, newSize);
+            end = System.currentTimeMillis();
+            System.out.println("Алгоритм 4 русских " + "(" + size + ") время " + (end - start));
+            //printArray(C, newSize, newSize);
+            //System.out.println();
+            //printArray(D, newSize, newSize);
+        }
+    }
+
     public static void main(String[] args) {
-        System.out.println("Введите n, l и t. t должно быть кратным k");
-//        int n, t, l;
-//        try(Scanner scanner = new Scanner(System.in)) {
-//            n = scanner.nextInt();
-//            l = scanner.nextInt();
-//            t = scanner.nextInt();
-//            if(t % k != 0 || n <= 0 || l <= 0 || t <= 0) {
-//                System.out.println("Error");
-//                System.exit(-1);
-//            }
-//            System.out.println("Введите строки матрицы A");
-//            BitSet[] A = parseData(n);
-//            System.out.println("Введите столбцы матрицы B");
-//            BitSet[] B = parseData(l);
-//        } catch (Exception e) {
-//            throw new RuntimeException();
-//        }
-        int n = 3, l = 3, t = 3;
+        /*int n = 3, l = 3, t = 3;
         BitSet[] A = new BitSet[] {new BitSet(3),new BitSet(3), new BitSet(3)};
         BitSet[] B = new BitSet[] {new BitSet(3),new BitSet(3), new BitSet(3)};
         A[0].set(0); A[1].set(1); A[2].set(2);
@@ -234,5 +247,7 @@ public class FourRussiansAlgorithm {
         end = System.currentTimeMillis();
         PrintArray(C, n, l);
         System.out.println("Методом 4-ех русских умножение: " + (end - start));
+        */
+        runTest();
     }
 }
