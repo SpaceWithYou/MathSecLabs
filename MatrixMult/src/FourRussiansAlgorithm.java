@@ -1,11 +1,9 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.*;
 /**Подсчет C = A x B алгоритмом 4-х русских**/
 public class FourRussiansAlgorithm {
     /**Пара BitSet для двух ключей <br>
      * Поскольку BitSet, которые мы храним имеет размер K, то хеш
-     * будем считать как хеш конкатенации BitSet**/
+     * будем считать как хеш конкатенации BitSet.**/
     private static class BitSetPair {
         private BitSet key1;
         private BitSet key2;
@@ -120,26 +118,21 @@ public class FourRussiansAlgorithm {
      * B - t x l
      * @return C - n x l**/
     private static BitSet[] AlgoMult(BitSet[] A, BitSet[] B, int n, int t, int l) {
-        BitSet setA = new BitSet(k);
-        BitSet setB = new BitSet(k);
+        BitSet setA, setB;
         BitSet[] C = new BitSet[n];              //Bitsets are row's of C
-        BitSet temp = new BitSet(t);
+        BitSet temp = new BitSet();
         BitSetPair pair = new BitSetPair();
         for(int i = 0; i < n; i++) {
-            for(int j = 0; j < t / k; j += k) {
-                for(int m = 0; m < l; m++) {
+            for(int m = 0; m < l; m++) {
+                for(int j = 0; j < t / k; j += k) {
                     setA = A[i].get(j, j + k - 1);
-                    for(int s = 0; s < t / k; s += k) {
-                        setB = B[m].get(s, s + k - 1);
-                        pair.setKey1(setA);
-                        pair.setKey2(setB);
-                        if(scalarMap.get(pair) == 1) {
-                            temp.set(m);
-                        }
+                    pair.setKey1(setA);
+                    setB = B[m].get(j, j + k - 1);
+                    pair.setKey2(setB);
+                    if(scalarMap.get(pair) == 1) {
+                        temp.set(m);
                     }
-                    setB.clear();
                 }
-                setA.clear();
             }
             C[i] = (BitSet) temp.clone();
             temp.clear();
@@ -169,7 +162,7 @@ public class FourRussiansAlgorithm {
 
     /**Generates random n x n array**/
     private static BitSet[] randomArray(int n) {
-        BitSet res[] = new BitSet[n];
+        BitSet[] res = new BitSet[n];
         BitSet temp = new BitSet(n);
         Random random = new Random();
         for(int i = 0; i < n; i++) {
@@ -207,32 +200,30 @@ public class FourRussiansAlgorithm {
 
     private static void runTest() {
         calculateScalarMap();
-        int arr[] = new int[] {3, 4, 6, 8, 10, 12, 14, 16, 18, 20}; //n
+        int[] arr = new int[] {3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}; //n
         int size, newSize;
+        long start, end;
         for(int i = 0; i < arr.length; i++) {
             size = (int)binPow(2, arr[i]);
             BitSet[] A = fillMatrix(randomArray(size), size, size);
             BitSet[] B = fillMatrix(randomArray(size), size, size);
             newSize = A.length;
-            long start = System.currentTimeMillis();
+            start = System.currentTimeMillis();
             Mult(A, B, newSize, newSize, newSize);
-            long end = System.currentTimeMillis();
+            end = System.currentTimeMillis();
             System.out.println("Обычное умножение " + "(" + size + ") время " + (end - start));
             start = System.currentTimeMillis();
             AlgoMult(A, B, newSize, newSize, newSize);
             end = System.currentTimeMillis();
             System.out.println("Алгоритм 4 русских " + "(" + size + ") время " + (end - start));
-            //printArray(C, newSize, newSize);
-            //System.out.println();
-            //printArray(D, newSize, newSize);
         }
     }
 
     public static void main(String[] args) {
-        /*int n = 3, l = 3, t = 3;
+        int n = 3, l = 3, t = 3;
         BitSet[] A = new BitSet[] {new BitSet(3),new BitSet(3), new BitSet(3)};
         BitSet[] B = new BitSet[] {new BitSet(3),new BitSet(3), new BitSet(3)};
-        A[0].set(0); A[1].set(1); A[2].set(2);
+        A[0].set(2); A[1].set(1); A[2].set(2);
         B[0].set(2); B[1].set(1); B[2].set(0);
         A = fillMatrix(A, 3, 3);
         B = fillMatrix(B, 3, 3);
@@ -240,14 +231,13 @@ public class FourRussiansAlgorithm {
         long start = System.currentTimeMillis();
         BitSet[] C = Mult(A, B, 10, 10, 10);
         long end = System.currentTimeMillis();
-        PrintArray(C, n, l);
+        printArray(C, n, l);
         System.out.println("Обычное умножение: " + (end - start));
         start = System.currentTimeMillis();
         C = AlgoMult(A, B, 10, 10, 10);
         end = System.currentTimeMillis();
-        PrintArray(C, n, l);
+        printArray(C, n, l);
         System.out.println("Методом 4-ех русских умножение: " + (end - start));
-        */
-        runTest();
+        //runTest();
     }
 }
