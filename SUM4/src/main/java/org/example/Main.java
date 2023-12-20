@@ -56,25 +56,24 @@ public class Main {
      * после заполнения смотрим наличие суммы -(a + b)**/
     private static List<List<Integer>> algo(int[] X) {
         List<List<Integer>> res = new ArrayList<>();
-        HashMap<IntegerPair, Integer> map = new HashMap<>();
-        IntegerPair pair = new IntegerPair();
+        HashMap<Integer, IntegerPair> map = new HashMap<>();
+        IntegerPair pair;
         int n = X.length;
         for(int i = 0; i < n; i++) {
-            for(int j = 0; j < n; j++) {
-                if(j == i) continue;
-                pair.setValue1(X[i]);
-                pair.setValue2(X[j]);
-                map.put((IntegerPair) pair.clone(), X[i] + X[j]);
+            for(int j = 0; j < n && j != i; j++) {
+                pair = new IntegerPair(X[i], X[j]);
+                map.put(X[i] + X[j], pair);
             }
         }
         List<Integer> temp = new ArrayList<>();
-        for(IntegerPair pair1: map.keySet()) {
-            for(IntegerPair pair2: map.keySet()) {
-                if(map.get(pair1) == -map.get(pair2)) {
-                    temp.add(pair1.getValue1());
-                    temp.add(pair1.getValue2());
-                    temp.add(pair2.getValue1());
-                    temp.add(pair2.getValue2());
+        for(int i = 0; i < n; i++) {
+            for(int j = 0; j < n && j != i; j++) {
+                if(map.containsKey(-(X[i] + X[j]))) {
+                    pair = map.get(-(X[i] + X[j]));
+                    temp.add(pair.getValue1());
+                    temp.add(pair.getValue2());
+                    temp.add(X[i]);
+                    temp.add(X[j]);
                     res.add(temp);
                     temp = new ArrayList<>();
                 }
@@ -84,7 +83,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        int[] X = new int[] {0, 1, 1, -1, 2, -1, 3, -2, 0, 4};
+        int[] X = new int[] {-1, 0, 1, 0};
         List<List<Integer>> res =  algo(X);
         for(List<Integer> solution: res) {
             System.out.print(" " + solution.get(0));
